@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>erath - three.js</title>
+	<script src="js/three.min.js"></script>
+	<script src="js/TrackballControls.js"></script>
+	<script src="js/jquery.min.js"></script>
+</head>
+<style>
+	* {
+		padding: 0px;
+		margin: 0px;
+	}
+		html,body,.main {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+		.main {
+			position: relative;
+		}
+			.div {
+				float: left;
+				width: calc(100% / 3);
+				height: calc(100% / 3);
+				cursor: move;
+			}
+			.btn {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 50px;
+				margin: 0 auto;
+				width: 20%;
+				height: 30px;
+				line-height: 30px;
+				text-align: center;
+				color: white;
+				letter-spacing: 20px;
+				background: rgba(139,139,139,.8);
+				cursor: pointer;
+				display: none;
+			}
+</style>
+<body>
+	<div class="main">
+		<div class="div div1"></div>
+		<div class="div div2"></div>
+		<div class="div div3"></div>
+		<div class="div div4"></div>
+		<div class="div div5"></div>
+		<div class="div div6"></div>
+		<div class="div div7"></div>
+		<div class="div div8"></div>
+		<div class="div div9"></div>
+		<div class="btn">返回</div>		
+	</div>
+</body>
+</html>
+<script>
+	function Three(className) {
+		this.off;
+		this.width = $(className).width();
+		this.height = $(className).height();
+		this.renderer =  new THREE.WebGLRenderer({
+            antialias : true   //开启锯齿，默认是false
+        });
+		this.renderer.setSize(this.width, this.height); // 给渲染区域设置宽高
+	    this.renderer.setClearColor("white"); // 设置背景色
+	    $(className).append(this.renderer.domElement); 
+	}
+	Three.prototype = {
+		init:function(url) {
+			var that = this;
+			this.scence = new THREE.Scene();  // 创建舞台
+			
+			// 设置视角及参数
+			this.camera = new THREE.PerspectiveCamera(45, this.width / this.height, 1, 10000);
+			this.camera.position.set(0,0,200);
+            this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+	        this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+            // this.controls.minDistance = 200;
+            this.controls.rotateSpeed = 1.0;
+			this.controls.zoomSpeed = 1.2;
+			this.controls.panSpeed = 0.8;
+			this.controls.noZoom = true;
+			this.controls.noPan = true;
+			this.controls.staticMoving = true;
+			this.controls.dynamicDampingFactor = 0.3;  
+
+			// 设置灯光及参数
+            this.light = new THREE.AmbientLight(0xDDDDDD);
+            this.light.position.set(100, 100, 200);
+            this.scence.add(this.light);
+
+            // 创建角色
+			var circle =  new THREE.SphereGeometry(900,50,50);
+            var texture = new THREE.TextureLoader();
+            
+			var material = new THREE.MeshBasicMaterial();
+			// 给circle添加背景图片
+			material.map = texture.load("images/"+url,function(){
+            	that.renderer.render(that.scence, that.camera);
+			});
+            that.mesh = new THREE.Mesh(circle,material);
+            that.mesh.position.set(0,0,-260);
+            that.mesh.scale.x = -1;
+    		that.scence.add(that.mesh);
+		},
+		animate:function() {
+			this.off = requestAnimationFrame(this.animate.bind(this));
+				this.mesh.rotation.y += 0.003;
+				this.controls.target.copy( this.mesh.position );
+				this.controls.update();
+				this.renderer.render(this.scence, this.camera);
+		},
+		turnAnimate:function(a) {
+			if(a) {
+				console.log("a是真");
+				this.animate();
+			}else {
+				console.log("a是假");
+				cancelAnimationFrame(this.off);
+			}
+		},
+		start:function() {
+			this.animate();
+		}
+	}
+	
+	function Dothree() {
+		var data = [
+			[".div1",".div2",".div3",".div4",".div5",".div6",".div7",".div8",".div9"],
+			["three","three1","three2","three3","three4","three5","three6","three7","three8","three9"],
+			["164409shep99yc3gm01c99.jpg","8748605_144012597000_2.jpg","1430474913_386400657.jpg","2294472375_24a3b8ef46_o.jpg","hefei.jpg","shinei2.jpg","shinei3.jpg","shinei4.jpg","t01e4a292285aaa7eaf.jpg"]
+		];
+		var turn = 1;
+
+		// 进入操作
+		$(".div").click(function() {
+			var index = $(this).index();
+			for(var j = 0, L = data[0].length; j < L; j ++) {
+				data[1][j].turnAnimate(false);
+			}
+			$(".div").hide();
+			data[1][index].turnAnimate(true);
+			if(turn) {
+				$(this).css({"width":"100%","height":"100%"}).show(500);
+				turn = 0;
+			}else {
+				$(this).css({"width":"100%","height":"100%"}).show();
+			}
+			$(this).children("canvas").css({"width":"100%","height":"100%"});
+			$(".btn").slideDown(1000);
+		});
+
+		// 返回操作 
+		$(".btn").click(function() {
+			$(this).slideUp(500);
+			$(".div").css({"width":"calc(100% / 3)","height":"calc(100% / 3)"}).show(500);
+			for(var j = 0, L = data[0].length; j < L; j ++) {
+				data[1][j].turnAnimate(true);
+			}
+		});
+		for(var i = 0,l =data[0].length; i < l; i++) {
+			data[1][i] = new Three(data[0][i]);
+			data[1][i].init(data[2][i]);
+			data[1][i].start();
+		}
+	}
+	Dothree();
+</script>
